@@ -6,6 +6,8 @@ use App\Models\Recipe;
 use App\Models\Ingredient;
 use App\Models\Direction;
 use Illuminate\Http\Request;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Exception;
 
 class RecipeController extends Controller
 {
@@ -31,7 +33,7 @@ class RecipeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'image_url' => 'required|string',
+            'image_url' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'name' => 'required|string',
             'duration' => 'required|integer',
             'rating' => 'required|integer',
@@ -42,7 +44,30 @@ class RecipeController extends Controller
             'directions.*.description' => 'required|string',
         ]);
 
-        $recipe = Recipe::create($request->only(['image_url', 'name', 'duration', 'rating']));
+        # Upload image to Cloudinary
+        try {
+            $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
+                'folder' => 'recipes',
+            ])->getSecurePath();
+
+            // Get the uploaded image URL
+            $imageUrl = $uploadedImage->getSecurePath();
+        } catch (Exception $e) {
+            // Return a JSON response with a 500 status code
+            return response()->json([
+                'message' => 'Failed to upload image. Please try again later.',
+            ], 500);
+        }
+
+        // Get the uploaded image URL
+        $imageUrl = $uploadedImage->getSecurePath();
+
+        $recipe = Recipe::create([
+            'image_url' => $imageUrl, 
+            'name' => $request->name, 
+            'duration' => $request->duration, 
+            'rating' => $request->rating,
+        ]);
 
         foreach ($request->ingredients as $ingredientData) {
             $ingredientData['recipe_id'] = $recipe->id;
