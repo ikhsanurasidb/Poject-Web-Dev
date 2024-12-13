@@ -33,7 +33,7 @@ class RecipeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'image_url' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
+            'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'name' => 'required|string',
             'duration' => 'required|integer',
             'rating' => 'required|integer',
@@ -46,12 +46,18 @@ class RecipeController extends Controller
 
         # Upload image to Cloudinary
         try {
-            $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
-                'folder' => 'recipes',
-            ])->getSecurePath();
+            if ($request->hasFile('image')) {
+                $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
+                    'folder' => 'recipes',
+                ]);
 
-            // Get the uploaded image URL
-            $imageUrl = $uploadedImage->getSecurePath();
+                // Get the uploaded image URL
+                $imageUrl = $uploadedImage->getSecurePath();
+            } else {
+                return response()->json([
+                    'message' => 'Image file is required.',
+                ], 400);
+            }
         } catch (Exception $e) {
             // Return a JSON response with a 500 status code
             return response()->json([
@@ -59,13 +65,14 @@ class RecipeController extends Controller
             ], 500);
         }
 
+
         // Get the uploaded image URL
         $imageUrl = $uploadedImage->getSecurePath();
 
         $recipe = Recipe::create([
-            'image_url' => $imageUrl, 
-            'name' => $request->name, 
-            'duration' => $request->duration, 
+            'image_url' => $imageUrl,
+            'name' => $request->name,
+            'duration' => $request->duration,
             'rating' => $request->rating,
         ]);
 
