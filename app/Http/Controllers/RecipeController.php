@@ -18,8 +18,13 @@ class RecipeController extends Controller
     {
         $query = Recipe::query();
 
-        if ($request->has('duration')) {
-            $query->where('duration', $request->duration);
+        $search = $request->search;
+
+        if ($request->has('search')) {
+            $query->where('name', 'like', "%" . $search . "%")
+                ->orWhereHas('ingredients', function ($q) use ($search) {
+                    $q->where('description', 'like', "%" . $search . "%");
+                });
         }
 
         $recipes = $query->with(['ingredients', 'directions'])->get();
