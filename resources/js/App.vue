@@ -7,15 +7,16 @@
         <p class="text-sm text-slate-300">
           Welcome back, {{ authStore.user.name }}
         </p>
-        <!-- <RouterLink :to="{ name: 'create' }" class="text-white hover:text-gray-400">
-          <Button>Post a Recipe</Button>
-        </RouterLink> -->
+       
         <form @submit.prevent="authStore.logout">
           <Button type="submit" class="text-white hover:text-gray-400">Logout</Button>
         </form>
       </div>
 
       <div v-else class="space-x-6">
+        <RouterLink :to="{ name: 'Create' }" class="text-white hover:text-gray-400">
+          <Button>Post a Recipe</Button>
+        </RouterLink>
         <RouterLink :to="{ name: 'register' }" class="text-white hover:text-gray-400">
           <Button>Register</Button>
         </RouterLink>

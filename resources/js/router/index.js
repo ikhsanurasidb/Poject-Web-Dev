@@ -3,8 +3,8 @@ import LoginView from "@/views/Auth/LoginView.vue";
 import RegisterView from "@/views/Auth/RegisterView.vue";
 import HomeView from '@/views/HomeView.vue';
 import RecipeDetails from '@/views/RecipeDetails.vue';
+import CreateView from '@/views/CreateView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import CreateView from '../views/CreateView.vue';
 
 const routes = [
     {
@@ -39,7 +39,7 @@ const routes = [
         path: '/create',
         name: 'Create',
         component: CreateView
-    }
+    },
 ];
 
 const router = createRouter({
