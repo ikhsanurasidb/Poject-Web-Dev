@@ -9,7 +9,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::apiResource('recipes', RecipeController::class);
+Route::apiResource('recipes', RecipeController::class)->middleware('auth:sanctum');
 
 Route::post('/register', [RegisterController::class,'register']);
 Route::post('/login', [RegisterController::class,'login']);
