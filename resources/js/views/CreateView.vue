@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import axios from "axios";
 import Button from "@/components/ui/button/Button.vue";
 import Input from "@/components/ui/input/Input.vue";
 import Label from "@/components/ui/label/Label.vue";
@@ -77,9 +78,47 @@ const removeDirection = (index) => {
 //     console.log("Show direction info");
 // };
 
-const handlePublish = () => {
-    // Implement publish logic
-    console.log("Publishing recipe:", recipe.value);
+const handlePublish = async () => {
+  try {
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('name', recipe.value.name);
+    formData.append('servings', recipe.value.servings);
+    formData.append('duration', recipe.value.duration);
+    formData.append('rating', 0); // You might want to add a rating field to your form
+
+    // Append the image file
+    if (previewImage.value) {
+      const response = await fetch(previewImage.value);
+      const blob = await response.blob();
+      formData.append('image', blob, 'recipe_image.jpg');
+    }
+
+    // Append ingredients
+    recipe.value.ingredients.forEach((ingredient, index) => {
+      formData.append(`ingredients[${index}][quantity]`, ingredient.quantity);
+      formData.append(`ingredients[${index}][unit]`, ingredient.unit);
+      formData.append(`ingredients[${index}][description]`, ingredient.name);
+    });
+
+    // Append directions
+    recipe.value.directions.forEach((direction, index) => {
+      formData.append(`directions[${index}][description]`, direction.text);
+    });
+
+    // Send the request to the backend
+    const response = await axios.post('/api/recipes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('Recipe published successfully:', response.data);
+    // You might want to show a success message to the user or redirect them
+  } catch (error) {
+    console.error('Error publishing recipe:', error);
+    // You might want to show an error message to the user
+  }
 };
 </script>
 
