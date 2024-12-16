@@ -9,24 +9,43 @@ use Illuminate\Http\Request;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Exception;
 
+
 class RecipeController extends Controller
-{
+{   
+    
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $query = Recipe::query();
+    {   
+        $search = $request->input('search');
+        $duration = $request->input('duration');
 
-        if ($request->has('duration')) {
-            $query->where('duration', $request->duration);
-        }
+        // Build the query with optional search and duration filtering
+        $query = Recipe::with(['ingredients', 'directions'])
+            ->when($search, function ($query) use ($search) {
+                return $query->where('name', 'like', "%{$search}%")
+                             ->orWhere('duration', 'like', "%{$search}%"); // Adjust based on your search needs
+            })
+            ->when($duration, function ($query) use ($duration) {
+                return $query->where('duration', $duration);
+            })
+            ->latest();
 
-        $recipes = $query->with(['ingredients', 'directions'])->get();
+        // Paginate the results
+        $recipes = $query->paginate(6);
 
-        return response()->json($recipes);
+        // Return recipes and pagination metadata
+        return response()->json([
+            'data' => $recipes->items(), // The actual recipes
+            'meta' => [
+                'current_page' => $recipes->currentPage(),
+                'last_page' => $recipes->lastPage(),
+                'total' => $recipes->total(),
+                'per_page' => $recipes->perPage(),
+            ],
+        ]);
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -89,6 +108,7 @@ class RecipeController extends Controller
 
         return response()->json($recipe->load(['ingredients', 'directions']), 201);
     }
+
 
     /**
      * Display the specified resource.

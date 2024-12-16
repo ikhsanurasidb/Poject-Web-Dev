@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script>
 import Button from "@/components/ui/button/Button.vue";
 import {
     Card,
