@@ -27,3 +27,12 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::apiResource('recipes', RecipeController::class);
     Route::post('/logout', [RegisterController::class, 'logout']);
 });
+
+Route::get('/test-connection', function () {
+    try {
+        \DB::connection()->getPdo();
+        return response()->json(['message' => 'Database connection is successful'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Could not connect to the database. Please check your configuration.'], 500);
+    }
+});

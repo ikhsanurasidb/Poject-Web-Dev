@@ -8,7 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import Switch from "@/components/ui/switch/Switch.vue";
 import { cn } from "@/lib/utils";
 import { BellRing, Check } from "lucide-vue-next";
 
