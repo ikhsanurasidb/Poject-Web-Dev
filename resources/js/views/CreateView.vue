@@ -24,6 +24,8 @@ import {
     TrashIcon,
     // DotsVerticalIcon,
 } from "lucide-vue-next";
+import { useAuthStore } from "@/stores/auth";
+
 
 const previewImage = ref(null);
 const recipe = ref({
@@ -115,8 +117,8 @@ const handlePublish = async () => {
     const response = await axios.post('/api/recipes', formData, {
       headers: {
         // 'Content-Type': 'multipart/form-data',
-        "Content-Type": "application/json",
-        // Authorization: `Bearer ${authStore.token}`,
+        // "Content-Type": "application/json",
+        Authorization: `Bearer ${useAuthStore().token}`,
       },
     });
 
