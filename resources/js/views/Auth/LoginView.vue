@@ -131,5 +131,17 @@ const onSubmit = form.handleSubmit(async (values) => {
     } finally {
         isLoading.value = false;
     }
+
+    try {
+        const response = await axios.get(`${APP_URL}/api/user`, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`,
+            },
+        });
+
+        authStore.setName(response.data.name);
+    } catch (error) {
+
+    }
 });
 </script>
