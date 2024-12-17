@@ -31,6 +31,7 @@ const previewImage = ref(null);
 const recipe = ref({
     name: "",
     servings: "",
+    description: "",
     duration: 30,
     ingredients: [],
     directions: [],
@@ -88,6 +89,8 @@ const handlePublish = async () => {
     formData.append('servings', recipe.value.servings);
     formData.append('duration', recipe.value.duration);
     formData.append('rating', 0); // You might want to add a rating field to your form
+    formData.append('description', recipe.value.description);
+    formData.append('created_by', useAuthStore().email);
 
     // Append the image file
     if (previewImage.value) {
@@ -189,6 +192,15 @@ const handlePublish = async () => {
                         id="recipe-name"
                         v-model="recipe.name"
                         placeholder="eg: Savory Stuffed Bell Peppers"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <Label for="recipe-name">Recipe description</Label>
+                    <Input
+                        id="recipe-description"
+                        v-model="recipe.description"
+                        placeholder="eg: a delicious and healthy meal, perfect for lunch or dinner"
                     />
                 </div>
 
