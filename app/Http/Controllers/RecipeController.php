@@ -11,13 +11,13 @@ use Exception;
 
 
 class RecipeController extends Controller
-{   
-    
+{
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {   
+    {
         $search = $request->input('search');
         $duration = $request->input('duration');
 
@@ -54,8 +54,9 @@ class RecipeController extends Controller
         $request->validate([
             'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'name' => 'required|string',
+            'servings'=> 'required|integer',
             'duration' => 'required|integer',
-            'rating' => 'required|integer',
+            'rating' => 'nullable|integer',
             'ingredients' => 'required|array',
             'directions' => 'required|array',
             'ingredients.*.quantity' => 'required|integer',
@@ -91,18 +92,20 @@ class RecipeController extends Controller
         $recipe = Recipe::create([
             'image_url' => $imageUrl,
             'name' => $request->name,
+            'servings' => $request->servings,
             'duration' => $request->duration,
             'rating' => $request->rating,
         ]);
 
         foreach ($request->ingredients as $ingredientData) {
             $ingredientData['recipe_id'] = $recipe->id;
+            $ingredientData['unit'] = $ingredientData['unit'] ?? '';
             Ingredient::create($ingredientData);
         }
 
         foreach ($request->directions as $directionData) {
             $directionData['recipe_id'] = $recipe->id;
-            $directionData['image_url'] = $directionData['image_url'] ?? 'https://example.com/default-direction.jpg'; // Default image URL
+            $directionData['image_url'] = $directionData['image_url'] ?? 'https://example.com/default-direction.jpg';
             Direction::create($directionData);
         }
 
