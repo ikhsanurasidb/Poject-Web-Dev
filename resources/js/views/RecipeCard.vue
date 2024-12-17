@@ -1,58 +1,91 @@
 <template>
-    <div
-        class="max-w-sm rounded-lg h-[50%] overflow-hidden shadow-lg flex flex-col justify-between"
-    >
+    <Card class="w-[350px] h-[400px] flex flex-col overflow-hidden group">
+      <CardHeader class="p-0 relative">
         <img
-            class="max-h-[50%] object-cover"
-            :src="recipe.image_url"
-            :alt="recipe.name"
+          class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+          :src="recipe.image_url"
+          :alt="recipe.name"
         />
-        <!-- Updated to use image_url -->
-        <div class="p-5 grid grid-flow-col place-items-end place- gap-2 w-full">
-            <div class="place-self-start">
-                <div class="font-bold text-xl mb-2">{{ recipe.name }}</div>
-                <!-- <p class="text-gray-700 text-base">{{ recipe.description }}</p> -->
-                 <p>{{ dummyDescription }}</p>
-                <!-- <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Laborum ipsa facilis vitae nemo blanditiis! Doloremque,
-                    exercitationem? Numquam harum libero omnis laudantium
-                    nostrum explicabo magni, fugiat repudiandae iste. Est, ipsam
-                    iusto.
-                </p> -->
-            </div>
-            <div class="">
-                <button
-                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
-                    @click="$emit('click', recipe.id)"
-                >
-                    View Recipe
-                </button>
-            </div>
+        <div class="absolute top-2 right-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" class="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm" @click.stop>
+                <MoreVerticalIcon class="h-4 w-4" />
+                <span class="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem @click.stop="editRecipe">
+                <PencilIcon class="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem @click.stop="confirmDelete">
+                <TrashIcon class="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-    </div>
+      </CardHeader>
+      <CardContent class="flex-grow p-4 flex flex-col justify-between">
+        <div>
+          <CardTitle class="text-xl mb-2">{{ recipe.name }}</CardTitle>
+          <p class="truncate w-full">{{ recipe.description }}</p>
+        </div>
+        <div class="flex justify-between items-center mt-4">
+          <!-- <Badge variant="secondary" class="text-xs">
+            {{ recipe.category }}
+          </Badge> -->
+          <Button variant="outline" size="sm" @click="viewRecipe">
+            View Recipe
+            <ChevronRightIcon class="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
 </template>
-
-<script>
-export default {
-    props: {
-        recipe: {
-            type: Object,
-            required: true,
-        },
+  
+  <script setup>
+  import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/components/ui/toast';
+import { ChevronRightIcon, MoreVerticalIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+  
+  const props = defineProps({
+    recipe: {
+      type: Object,
+      required: true,
     },
-    emits: ["click"],
-    computed: {
-        truncatedDescription() {
-            const maxLength = 100; // Set the maximum length for the description
-            if (this.recipe.description.length > maxLength) {
-                return this.recipe.description.substring(0, maxLength) + "...";
-            }
-            return this.recipe.description;
-        },
-    },
-};
-
-const dummyDescription =
-    "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum ipsa facilis vitae nemo blanditiis! Doloremque, exercitationem? Numquam harum libero omnis laudantium nostrum explicabo magni, fugiat repudiandae iste. Est, ipsam iusto.";
-</script>
+  });
+  
+  const emit = defineEmits(['delete']);
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const viewRecipe = () => {
+    router.push({ name: 'recipe', params: { id: props.recipe.id } });
+  };
+  
+  const editRecipe = () => {
+    router.push({ name: 'Update', params: { id: props.recipe.id } });
+  };
+  
+  const confirmDelete = () => {
+    if (window.confirm(`Are you sure you want to delete "${props.recipe.name}"?`)) {
+      console.log('Emitting delete event for recipe:', props.recipe.id);
+      emit('delete', props.recipe.id);
+      toast({
+        title: 'Recipe Deleted',
+        description: `"${props.recipe.name}" has been deleted successfully.`,
+        variant: 'default',
+      });
+    }
+  };
+  </script>

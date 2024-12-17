@@ -1,5 +1,5 @@
-import { defineStore } from "pinia";
 import axios from "axios";
+import { defineStore } from "pinia";
 import { useAuthStore } from "./auth";
 
 const APP_URL = import.meta.env.VITE_APP_URL;
@@ -71,6 +71,34 @@ export const useRecipeStore = defineStore("recipe", {
             } catch (error) {
                 this.error = error.message || "An unknown error occurred";
                 console.error("Error fetching recipe details:", error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        async deleteRecipe(id) {
+            this.loading = true;
+            this.error = null;
+            try {
+                const response = await fetch(`${APP_URL}/api/recipes/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${useAuthStore().token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.json();
+                    throw new Error(errorDetails.message || `Error deleting recipe: ${response.status}`);
+                }
+
+                // Remove the deleted recipe from the local state
+                this.recipes = this.recipes.filter(recipe => recipe.id !== id);
+                console.log('Recipe deleted successfully');
+            } catch (error) {
+                this.error = error.message || "An unknown error occurred";
+                console.error('Error deleting recipe:', error);
+                throw error;
             } finally {
                 this.loading = false;
             }
