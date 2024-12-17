@@ -14,9 +14,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-// import Switch from "@/components/ui/switch/Switch.vue";
+import Switch from "@/components/ui/switch/Switch.vue";
 import Textarea from "@/components/ui/textarea/Textarea.vue";
-import { ImageIcon, PlusIcon, TrashIcon } from "lucide-vue-next";
+import {
+    ImageIcon,
+    PlusIcon,
+    TrashIcon,
+    // DotsVerticalIcon,
+} from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
 
 //? route way
@@ -39,6 +44,7 @@ const recipe = ref({
     duration: 30,
     ingredients: [],
     directions: [],
+    // rating: 0, // Added rating property
 });
 
 onMounted(async () => {
@@ -98,6 +104,9 @@ const handleUpdate = async () => {
         formData.append("servings", recipe.value.servings);
         formData.append("duration", recipe.value.duration);
         formData.append("description", recipe.value.description);
+        // formData.append("rating", recipe.value.rating || 0);
+        // formData.append("created_by", useAuthStore().email);
+        formData.append("_method", "PATCH"); // Add this line to simulate PATCH request
 
         if (previewImage.value && !previewImage.value.startsWith("http")) {
             const response = await fetch(previewImage.value);
@@ -110,7 +119,10 @@ const handleUpdate = async () => {
                 `ingredients[${index}][quantity]`,
                 ingredient.quantity
             );
-            formData.append(`ingredients[${index}][unit]`, ingredient.unit);
+            formData.append(
+                `ingredients[${index}][unit]`,
+                ingredient.unit || ""
+            );
             formData.append(
                 `ingredients[${index}][description]`,
                 ingredient.description
