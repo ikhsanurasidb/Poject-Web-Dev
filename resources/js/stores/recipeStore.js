@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuthStore } from "./auth";
 
 const APP_URL = import.meta.env.VITE_APP_URL;
+// console.log("APP_URL:", APP_URL);
 
 export const useRecipeStore = defineStore("recipe", {
     state: () => ({
@@ -19,6 +20,7 @@ export const useRecipeStore = defineStore("recipe", {
                 const response = await axios({
                     method: "GET",
                     url: `${APP_URL}/api/recipes?page=${page}&search=${search}`,
+                    // url: `http://localhost:8000/api/recipes?page=${page}&search=${search}`,
                     headers: {
                         Authorization: `Bearer ${useAuthStore().token}`,
                     },
@@ -45,6 +47,7 @@ export const useRecipeStore = defineStore("recipe", {
             try {
                 const response = await fetch(
                     `${APP_URL}/api/recipes/${id}`,
+                    // `http://localhost:8000/api/recipes/${id}`,
                     {
                         method: "GET",
                         headers: {
