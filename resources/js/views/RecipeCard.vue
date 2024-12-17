@@ -1,46 +1,52 @@
 <template>
-    <Card class="w-[350px] h-[400px] flex flex-col">
-      <CardHeader class="p-0">
+    <Card class="w-[350px] h-[400px] flex flex-col overflow-hidden group">
+      <CardHeader class="p-0 relative">
         <img
-          class="w-full h-48 object-cover rounded-t-lg"
+          class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
           :src="recipe.image_url"
           :alt="recipe.name"
         />
+        <div class="absolute top-2 right-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" class="h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm" @click.stop>
+                <MoreVerticalIcon class="h-4 w-4" />
+                <span class="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem @click.stop="editRecipe">
+                <PencilIcon class="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem @click.stop="confirmDelete">
+                <TrashIcon class="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
       <CardContent class="flex-grow p-4 flex flex-col justify-between">
         <div>
-          <div class="flex justify-between items-start mb-2">
-            <CardTitle class="text-xl">{{ recipe.name }}</CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" class="h-8 w-8 p-0">
-                  <span class="sr-only">Open menu</span>
-                  <MoreVerticalIcon class="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="$emit('edit', recipe.id)">
-                  <PencilIcon class="mr-2 h-4 w-4" />
-                  <span>Edit</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem @click="$emit('delete', recipe.id)">
-                  <TrashIcon class="mr-2 h-4 w-4" />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <p class="text-muted-foreground line-clamp-3">{{ recipe.description }}</p>
+          <CardTitle class="text-xl mb-2">{{ recipe.name }}</CardTitle>
+          <p class="truncate w-full">{{ recipe.description }}</p>
         </div>
-        <Button class="w-full mt-4" @click="$emit('click', recipe.id)">
-          View Recipe
-        </Button>
+        <div class="flex justify-between items-center mt-4">
+          <!-- <Badge variant="secondary" class="text-xs">
+            {{ recipe.category }}
+          </Badge> -->
+          <Button variant="outline" size="sm" @click="viewRecipe">
+            View Recipe
+            <ChevronRightIcon class="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
 </template>
   
-<script setup>
-import { Button } from '@/components/ui/button';
+  <script setup>
+  import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     DropdownMenu,
@@ -48,14 +54,38 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVerticalIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
+import { useToast } from '@/components/ui/toast';
+import { ChevronRightIcon, MoreVerticalIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
   
-defineProps({
-  recipe: {
-    type: Object,
-    required: true,
-  },
-})
+  const props = defineProps({
+    recipe: {
+      type: Object,
+      required: true,
+    },
+  });
   
-defineEmits(['click', 'edit', 'delete'])
-</script>
+  const emit = defineEmits(['delete']);
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const viewRecipe = () => {
+    router.push({ name: 'recipe', params: { id: props.recipe.id } });
+  };
+  
+  const editRecipe = () => {
+    router.push({ name: 'Update', params: { id: props.recipe.id } });
+  };
+  
+  const confirmDelete = () => {
+    if (window.confirm(`Are you sure you want to delete "${props.recipe.name}"?`)) {
+      console.log('Emitting delete event for recipe:', props.recipe.id);
+      emit('delete', props.recipe.id);
+      toast({
+        title: 'Recipe Deleted',
+        description: `"${props.recipe.name}" has been deleted successfully.`,
+        variant: 'default',
+      });
+    }
+  };
+  </script>
