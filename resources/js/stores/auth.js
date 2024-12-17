@@ -22,5 +22,5 @@ export const useAuthStore = defineStore("auth", {
             this.email = null;
         },
     },
-    persist: true, // This will persist the store in localStorage
+    persist: true,
 });

@@ -22,14 +22,16 @@ export const useRecipeStore = defineStore("recipe", {
                     },
                 });
 
-                console.log(response);
+                console.log(response.data);
 
-                // Ambil data dari response
                 this.recipes = response.data.data; // Sesuaikan dengan struktur data API Anda
                 return response.data; // Kembalikan data untuk penggunaan lebih lanjut
             } catch (error) {
-                this.error = error.message || "Failed to fetch recipes.";
-                console.error("Error fetching recipes:", error);
+                console.error("Error fetching recipes:", error.response.status);
+                if (error.response.status === 401) {
+                    console.error("Unauthorized");
+                    throw { status: 401 };
+                }
             } finally {
                 this.loading = false;
             }

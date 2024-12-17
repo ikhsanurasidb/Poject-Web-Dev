@@ -175,6 +175,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         if (response.data.success) {
             console.log("Registration successful, setting token...");
             authStore.setToken(response.data.data.token);
+            authStore.setEmail(values.email);
             authStore.setName(response.data.data.name);
             console.log("Showing success toast...");
             toast({
