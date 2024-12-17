@@ -254,6 +254,9 @@ const handlePublish = async () => {
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectLabel>Volume</SelectLabel>
+                                            <SelectItem value="-"
+                                                >-</SelectItem
+                                            >
                                             <SelectItem value="pcs"
                                                 >pcs</SelectItem
                                             >
