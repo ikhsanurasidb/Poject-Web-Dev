@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import Switch from "@/components/ui/switch/Switch.vue";
 import Textarea from "@/components/ui/textarea/Textarea.vue";
+import { useToast } from "@/components/ui/toast";
 import {
     ImageIcon,
     // InfoIcon,
@@ -25,7 +26,7 @@ import {
     // DotsVerticalIcon,
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
-
+import { useRouter } from "vue-router";
 
 const previewImage = ref(null);
 const recipe = ref({
@@ -36,6 +37,9 @@ const recipe = ref({
     ingredients: [],
     directions: [],
 });
+
+const router = useRouter();
+const { toast } = useToast();
 
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -82,55 +86,77 @@ const removeDirection = (index) => {
 // };
 
 const handlePublish = async () => {
-  try {
-    // Prepare the form data
-    const formData = new FormData();
-    formData.append('name', recipe.value.name);
-    formData.append('servings', recipe.value.servings);
-    formData.append('duration', recipe.value.duration);
-    formData.append('rating', 0); // You might want to add a rating field to your form
-    formData.append('description', recipe.value.description);
-    formData.append('created_by', useAuthStore().email);
+    try {
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append("name", recipe.value.name);
+        formData.append("servings", recipe.value.servings);
+        formData.append("duration", recipe.value.duration);
+        formData.append("rating", 0); // You might want to add a rating field to your form
+        formData.append("description", recipe.value.description);
+        formData.append("created_by", useAuthStore().email);
 
-    // Append the image file
-    if (previewImage.value) {
-      const response = await fetch(previewImage.value);
-      const blob = await response.blob();
-      formData.append('image', blob, 'recipe_image.jpg');
+        // Append the image file
+        if (previewImage.value) {
+            const response = await fetch(previewImage.value);
+            const blob = await response.blob();
+            formData.append("image", blob, "recipe_image.jpg");
+        }
+
+        // Append ingredients
+        recipe.value.ingredients.forEach((ingredient, index) => {
+            formData.append(
+                `ingredients[${index}][quantity]`,
+                ingredient.quantity
+            );
+            formData.append(`ingredients[${index}][unit]`, ingredient.unit);
+            formData.append(
+                `ingredients[${index}][description]`,
+                ingredient.name
+            );
+        });
+
+        // Append directions
+        recipe.value.directions.forEach((direction, index) => {
+            formData.append(
+                `directions[${index}][description]`,
+                direction.text
+            );
+        });
+
+        // Log the form data
+        for (let pair of formData.entries()) {
+            console.log(`${pair[0]}: ${pair[1]}`);
+        }
+
+        // Send the request to the backend
+        const response = await axios.post("/api/recipes", formData, {
+            headers: {
+                // 'Content-Type': 'multipart/form-data',
+                // "Content-Type": "application/json",
+                Authorization: `Bearer ${useAuthStore().token}`,
+            },
+        });
+
+        console.log("Recipe published successfully:", response.data);
+        toast({
+            title: "Recipe published!",
+            description: response.data,
+            //   variant: 'success',
+        });
+        router.push("/");
+        // You might want to show a success message to the user or redirect them
+    } catch (error) {
+        console.error("Error publishing recipe:", error);
+        toast({
+            title: "Oops! Something went wrong",
+            description:
+                `${error.message}, have you input all fields?` ||
+                "Failed to publish the recipe. Please try again.",
+            variant: "destructive",
+        });
+        // You might want to show an error message to the user
     }
-
-    // Append ingredients
-    recipe.value.ingredients.forEach((ingredient, index) => {
-      formData.append(`ingredients[${index}][quantity]`, ingredient.quantity);
-      formData.append(`ingredients[${index}][unit]`, ingredient.unit);
-      formData.append(`ingredients[${index}][description]`, ingredient.name);
-    });
-
-    // Append directions
-    recipe.value.directions.forEach((direction, index) => {
-      formData.append(`directions[${index}][description]`, direction.text);
-    });
-
-    // Log the form data
-    for (let pair of formData.entries()) {
-      console.log(`${pair[0]}: ${pair[1]}`);
-    }
-
-    // Send the request to the backend
-    const response = await axios.post('/api/recipes', formData, {
-      headers: {
-        // 'Content-Type': 'multipart/form-data',
-        // "Content-Type": "application/json",
-        Authorization: `Bearer ${useAuthStore().token}`,
-      },
-    });
-
-    console.log('Recipe published successfully:', response.data);
-    // You might want to show a success message to the user or redirect them
-  } catch (error) {
-    console.error('Error publishing recipe:', error);
-    // You might want to show an error message to the user
-  }
 };
 </script>
 
@@ -275,9 +301,7 @@ const handlePublish = async () => {
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectLabel>Volume</SelectLabel>
-                                            <SelectItem value="-"
-                                                >-</SelectItem
-                                            >
+                                            <SelectItem value="-">-</SelectItem>
                                             <SelectItem value="pcs"
                                                 >pcs</SelectItem
                                             >
