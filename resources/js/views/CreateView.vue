@@ -106,10 +106,17 @@ const handlePublish = async () => {
       formData.append(`directions[${index}][description]`, direction.text);
     });
 
+    // Log the form data
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}: ${pair[1]}`);
+    }
+
     // Send the request to the backend
     const response = await axios.post('/api/recipes', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        // 'Content-Type': 'multipart/form-data',
+        "Content-Type": "application/json",
+        // Authorization: `Bearer ${authStore.token}`,
       },
     });
 

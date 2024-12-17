@@ -11,9 +11,12 @@
                 <p class="text-sm text-slate-300">
                     Welcome back, {{ authStore.email }}
                 </p>
-                <!-- <RouterLink :to="{ name: 'create' }" class="text-white hover:text-gray-400">
-          <Button>Post a Recipe</Button>
-        </RouterLink> -->
+                <RouterLink
+                    :to="{ name: 'Create' }"
+                    class="text-white hover:text-gray-400"
+                >
+                    <Button>Post a Recipe</Button>
+                </RouterLink>
                 <form @submit.prevent="logout">
                     <Button type="submit" class="text-white hover:text-gray-400"
                         >Logout</Button
