@@ -1,114 +1,117 @@
 <template>
-  <div class="container mx-auto p-6 mt-4 bg-white rounded-lg shadow-md">
-    <h1 class="text-4xl font-bold mb-6 text-primary text-center">{{ recipe.title }}</h1>
+  <div class="container mx-auto p-6 space-y-8">
+    <Card v-if="loading">
+      <CardHeader>
+        <CardTitle>Loading Recipe</CardTitle>
+      </CardHeader>
+      <CardContent class="flex items-center justify-center p-6">
+        <Loader2Icon class="h-8 w-8 animate-spin" />
+      </CardContent>
+    </Card>
 
-    <div v-if="loading" class="text-center py-4">
-      <p class="text-lg">Loading recipe details...</p>
-      <svg class="animate-spin h-5 w-5 mx-auto text-orange-500" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
-    </div>
+    <Card v-else-if="error">
+      <CardHeader>
+        <CardTitle class="text-destructive">Error</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>{{ error }}</p>
+      </CardContent>
+    </Card>
 
-    <div v-else-if="error" class="text-red-500 text-center py-4">
-      <p class="text-lg">{{ error }}</p>
-    </div>
+    <div v-else class="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-3xl font-bold">{{ recipe.title }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <img :src="recipe.image_url" :alt="recipe.title" class="w-full h-80 object-cover rounded-lg shadow-md mb-6" />
+          <p class="text-lg">{{ recipe.description }}</p>
+        </CardContent>
+      </Card>
 
-    <div v-else>
-      <div class="mb-4">
-        <img :src="recipe.image_url" alt="Recipe Image" class="w-full h-64 object-cover rounded-lg shadow-md" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Ingredients</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul class="list-disc pl-5 space-y-2">
+            <li v-for="(ingredient, index) in recipe.ingredients" :key="index">
+              <span class="font-semibold">{{ ingredient.quantity }}</span> {{ ingredient.description }}
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Directions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol class="list-decimal pl-5 space-y-4">
+            <li v-for="(direction, index) in recipe.directions" :key="index">
+              {{ direction.description }}
+            </li>
+          </ol>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Duration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Badge variant="secondary" class="text-lg">
+            {{ recipe.duration }} minutes
+          </Badge>
+        </CardContent>
+      </Card>
+
+      <div class="flex justify-between items-center">
+        <Button variant="outline" @click="$router.push('/')">
+          <ChevronLeftIcon class="mr-2 h-4 w-4" /> Back to Recipe List
+        </Button>
+        <!-- <Button @click="toggleFavorite">
+          <HeartIcon :class="{'fill-current': recipe.isFavorite}" class="mr-2 h-4 w-4" />
+          {{ recipe.isFavorite ? 'Remove from Favorites' : 'Add to Favorites' }}
+        </Button> -->
       </div>
-      <div class="mb-4">
-        <h2 class="text-2xl font-semibold">Ingredients</h2>
-        <ul class="list-disc pl-5">
-          <li v-for="(ingredient, index) in recipe.ingredients" :key="index">
-            <span class="font-bold">{{ ingredient.quantity }}</span> {{ ingredient.description }}
-          </li>
-        </ul>
-      </div>
-      <div class="mb-4">
-        <h2 class="text-2xl font-semibold">Directions</h2>
-        <ul class="list-disc pl-5">
-        <li v-for="(direction, index) in recipe.directions" :key="index">
-            {{ direction.description }}
-        </li>
-        </ul>
-      </div>
-      <div class="mb-4">
-        <h2 class="text-2xl font-semibold">Durations</h2>
-        <p class="text-lg mb-2"><strong>Est:</strong> {{ recipe.duration }} minutes</p>
-      </div>
-      <div class="mb-4">
-        <button @click="createRecipe" class="bg-blue-500 text-white px-4 py-2 rounded">Create</button>
-        <button @click="readRecipe(recipe.id)" class="bg-green-500 text-white px-4 py-2 rounded">Read</button>
-        <button @click="updateRecipe(recipe.id)" class="bg-yellow-500 text-white px-4 py-2 rounded">Update</button>
-        <button @click="deleteRecipe(recipe.id)" class="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
-      </div>
-      <router-link to="/" class="text-blue-500 hover:underline">Back to Recipe List</router-link>
     </div>
   </div>
 </template>
 
-<script>
-import { useRecipeStore } from '@/stores/recipeStore'; // Adjust the path as necessary
-import { onMounted, ref } from 'vue';
+<script setup>
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useRecipeStore } from '@/stores/recipeStore'
+import { ChevronLeftIcon, Loader2Icon } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-export default {
-  props: {
-    id: {
-      type: String,
-      required: true
-    }
-  },
-  setup(props) {
-    const recipeStore = useRecipeStore();
-    const recipe = ref({});
-    const loading = ref(true);
-    const error = ref(null);
+const route = useRoute()
+const router = useRouter()
+const recipeStore = useRecipeStore()
 
-    const fetchRecipeDetails = async () => {
-      try {
-        loading.value = true;
-        const response = await recipeStore.fetchRecipeById(props.id); // Call the new method
-        recipe.value = response; // Use the response directly
-      } catch (err) {
-        error.value = 'Failed to load recipe details. Please try again later.';
-      } finally {
-        loading.value = false;
-      }
-    };
+const recipe = ref({})
+const loading = ref(true)
+const error = ref(null)
 
-    onMounted(fetchRecipeDetails);
-
-    return {
-      recipe,
-      loading,
-      error
-    };
+const fetchRecipeDetails = async () => {
+  try {
+    loading.value = true
+    const response = await recipeStore.fetchRecipeById(route.params.id)
+    recipe.value = { ...response, isFavorite: false } // Add isFavorite property
+  } catch (err) {
+    error.value = 'Failed to load recipe details. Please try again later.'
+  } finally {
+    loading.value = false
   }
-};
+}
+
+const toggleFavorite = () => {
+  recipe.value.isFavorite = !recipe.value.isFavorite
+  // Here you would typically call an API to update the favorite status
+}
+
+onMounted(fetchRecipeDetails)
 </script>
-
-<style scoped>
-.container {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-  color: #333;
-}
-
-img {
-  border-radius: 8px;
-}
-
-.bg-gray-100 {
-  background-color: #f7fafc;
-}
-
-.shadow-inner {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-</style>

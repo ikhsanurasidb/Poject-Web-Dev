@@ -11,15 +11,10 @@
         <div class="p-5 grid grid-flow-col place-items-end place- gap-2 w-full">
             <div class="place-self-start">
                 <div class="font-bold text-xl mb-2">{{ recipe.name }}</div>
+                <div class="truncate w-48">
+                    {{ recipe.description }}
+                </div>
                 <!-- <p class="text-gray-700 text-base">{{ recipe.description }}</p> -->
-                 <p>{{ dummyDescription }}</p>
-                <!-- <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                    Laborum ipsa facilis vitae nemo blanditiis! Doloremque,
-                    exercitationem? Numquam harum libero omnis laudantium
-                    nostrum explicabo magni, fugiat repudiandae iste. Est, ipsam
-                    iusto.
-                </p> -->
             </div>
             <div class="">
                 <button

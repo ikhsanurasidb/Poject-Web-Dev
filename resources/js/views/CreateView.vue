@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from "vue";
-import axios from "axios";
 import Button from "@/components/ui/button/Button.vue";
 import Input from "@/components/ui/input/Input.vue";
 import Label from "@/components/ui/label/Label.vue";
+import axios from "axios";
+import { ref } from "vue";
 // import Label from "@/components/ui/label/Label.vue";
 // import Select from "@/components/ui/select/Select.vue";
 import {
@@ -17,14 +17,13 @@ import {
 } from "@/components/ui/select";
 import Switch from "@/components/ui/switch/Switch.vue";
 import Textarea from "@/components/ui/textarea/Textarea.vue";
+import { useAuthStore } from "@/stores/auth";
 import {
     ImageIcon,
     // InfoIcon,
     PlusIcon,
     TrashIcon,
-    // DotsVerticalIcon,
 } from "lucide-vue-next";
-import { useAuthStore } from "@/stores/auth";
 
 
 const previewImage = ref(null);
