@@ -1,53 +1,61 @@
 <template>
-    <div
-        class="max-w-sm rounded-lg h-[50%] overflow-hidden shadow-lg flex flex-col justify-between"
-    >
+    <Card class="w-[350px] h-[400px] flex flex-col">
+      <CardHeader class="p-0">
         <img
-            class="max-h-[50%] object-cover"
-            :src="recipe.image_url"
-            :alt="recipe.name"
+          class="w-full h-48 object-cover rounded-t-lg"
+          :src="recipe.image_url"
+          :alt="recipe.name"
         />
-        <!-- Updated to use image_url -->
-        <div class="p-5 grid grid-flow-col place-items-end place- gap-2 w-full">
-            <div class="place-self-start">
-                <div class="font-bold text-xl mb-2">{{ recipe.name }}</div>
-                <div class="truncate w-48">
-                    {{ recipe.description }}
-                </div>
-                <!-- <p class="text-gray-700 text-base">{{ recipe.description }}</p> -->
-            </div>
-            <div class="">
-                <button
-                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
-                    @click="$emit('click', recipe.id)"
-                >
-                    View Recipe
-                </button>
-            </div>
+      </CardHeader>
+      <CardContent class="flex-grow p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-start mb-2">
+            <CardTitle class="text-xl">{{ recipe.name }}</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" class="h-8 w-8 p-0">
+                  <span class="sr-only">Open menu</span>
+                  <MoreVerticalIcon class="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem @click="$emit('edit', recipe.id)">
+                  <PencilIcon class="mr-2 h-4 w-4" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="$emit('delete', recipe.id)">
+                  <TrashIcon class="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <p class="text-muted-foreground line-clamp-3">{{ recipe.description }}</p>
         </div>
-    </div>
+        <Button class="w-full mt-4" @click="$emit('click', recipe.id)">
+          View Recipe
+        </Button>
+      </CardContent>
+    </Card>
 </template>
-
-<script>
-export default {
-    props: {
-        recipe: {
-            type: Object,
-            required: true,
-        },
-    },
-    emits: ["click"],
-    computed: {
-        truncatedDescription() {
-            const maxLength = 100; // Set the maximum length for the description
-            if (this.recipe.description.length > maxLength) {
-                return this.recipe.description.substring(0, maxLength) + "...";
-            }
-            return this.recipe.description;
-        },
-    },
-};
-
-const dummyDescription =
-    "Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum ipsa facilis vitae nemo blanditiis! Doloremque, exercitationem? Numquam harum libero omnis laudantium nostrum explicabo magni, fugiat repudiandae iste. Est, ipsam iusto.";
+  
+<script setup>
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreVerticalIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
+  
+defineProps({
+  recipe: {
+    type: Object,
+    required: true,
+  },
+})
+  
+defineEmits(['click', 'edit', 'delete'])
 </script>
