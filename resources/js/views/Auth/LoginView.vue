@@ -87,6 +87,7 @@ import { useToast } from "@/components/ui/toast";
 const router = useRouter();
 const authStore = useAuthStore();
 const { toast } = useToast();
+const APP_URL = import.meta.env.VITE_APP_URL;
 
 const isLoading = ref(false);
 
@@ -102,7 +103,7 @@ const form = useForm({
 const onSubmit = form.handleSubmit(async (values) => {
     isLoading.value = true;
     try {
-        const response = await axios.post("http://localhost:8000/api/login", {
+        const response = await axios.post(`${APP_URL}/api/login`, {
             email: values.email,
             password: values.password,
         });

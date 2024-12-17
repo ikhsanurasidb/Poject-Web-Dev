@@ -2,6 +2,8 @@ import { defineStore } from "pinia";
 import axios from "axios";
 import { useAuthStore } from "./auth";
 
+const APP_URL = import.meta.env.VITE_APP_URL;
+
 export const useRecipeStore = defineStore("recipe", {
     state: () => ({
         recipes: [],
@@ -16,7 +18,7 @@ export const useRecipeStore = defineStore("recipe", {
             try {
                 const response = await axios({
                     method: "GET",
-                    url: `http://localhost:8000/api/recipes?page=${page}&search=${search}`,
+                    url: `${APP_URL}/api/recipes?page=${page}&search=${search}`,
                     headers: {
                         Authorization: `Bearer ${useAuthStore().token}`,
                     },
@@ -42,7 +44,7 @@ export const useRecipeStore = defineStore("recipe", {
             this.error = null;
             try {
                 const response = await fetch(
-                    `http://localhost:8000/api/recipes/${id}`,
+                    `${APP_URL}/api/recipes/${id}`,
                     {
                         method: "GET",
                         headers: {
