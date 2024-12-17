@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import Switch from "@/components/ui/switch/Switch.vue";
 import Textarea from "@/components/ui/textarea/Textarea.vue";
+import { useToast } from "@/components/ui/toast";
 import {
     ImageIcon,
     PlusIcon,
@@ -23,10 +24,13 @@ import {
     // DotsVerticalIcon,
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
 //? route way
 const route = useRoute();
 const recipeId = route.params.id;
+const router = useRouter();
+const { toast } = useToast();
 
 //? props way
 // const props = defineProps({
@@ -152,8 +156,21 @@ const handleUpdate = async () => {
         );
 
         console.log("Recipe updated successfully:", response.data);
+        toast({
+            title: "Recipe Updated!",
+            description: response.data,
+            //   variant: 'success',
+        });
+        router.push("/");
     } catch (error) {
         console.error("Error updating recipe:", error);
+        toast({
+            title: "Oops! Something went wrong",
+            description:
+                `${error.message}, have you input all fields?` ||
+                "Failed to publish the recipe. Please try again.",
+            variant: "destructive",
+        });
     }
 };
 </script>
