@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('image_url');
             $table->string('name');
+            $table->string('description');
             $table->integer('servings');
             $table->integer('duration');
             $table->integer('rating');
+            $table->string('created_by');
             $table->timestamps();
         });
     }
