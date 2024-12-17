@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: db_book_recipe
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: book_recipe
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_network
+
+  # PHP & Laravel Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: book_recipe_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - app_network
+    depends_on:
+      - db
+
+  # Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_server_book_recipe
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app_network
+    depends_on:
+      - app
+
+  # Node service for Vue prod
+  node:
+    image: node:18-alpine
+    container_name: vue_book_recipe
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: sh -c "cd /var/www && npm install && npm run build"
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

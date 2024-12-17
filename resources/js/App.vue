@@ -56,11 +56,12 @@ import axios from "axios";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const APP_URL = import.meta.env.VITE_APP_URL;
 
 const logout = async () => {
     try {
         await axios.post(
-            "http://localhost:8000/api/logout",
+            `${APP_URL}/api/logout`,
             {},
             {
                 headers: {
