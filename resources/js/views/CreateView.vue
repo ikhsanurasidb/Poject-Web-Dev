@@ -1,23 +1,37 @@
 <script setup>
 import { ref } from "vue";
-import { Button } from "@/components/ui/button/Button.vue";
-import { Input } from "@/components/ui/input/Input.vue";
-import { Label } from "@/components/ui/label/Label.vue";
-import { Select } from "@/components/ui/select/Select.vue";
-import { Switch } from "@/components/ui/switch/Switch.vue";
-import { Textarea } from "@/components/ui/textarea/Textarea.vue";
+import axios from "axios";
+import Button from "@/components/ui/button/Button.vue";
+import Input from "@/components/ui/input/Input.vue";
+import Label from "@/components/ui/label/Label.vue";
+// import Label from "@/components/ui/label/Label.vue";
+// import Select from "@/components/ui/select/Select.vue";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import Switch from "@/components/ui/switch/Switch.vue";
+import Textarea from "@/components/ui/textarea/Textarea.vue";
 import {
     ImageIcon,
-    InfoIcon,
+    // InfoIcon,
     PlusIcon,
     TrashIcon,
-    DotsVerticalIcon,
+    // DotsVerticalIcon,
 } from "lucide-vue-next";
+import { useAuthStore } from "@/stores/auth";
+
 
 const previewImage = ref(null);
 const recipe = ref({
     name: "",
     servings: "",
+    description: "",
     duration: 30,
     ingredients: [],
     directions: [],
@@ -57,19 +71,66 @@ const removeDirection = (index) => {
     recipe.value.directions.splice(index, 1);
 };
 
-const showIngredientInfo = () => {
-    // Implement ingredient info modal/tooltip
-    console.log("Show ingredient info");
-};
+// const showIngredientInfo = () => {
+//     // Implement ingredient info modal/tooltip
+//     console.log("Show ingredient info");
+// };
 
-const showDirectionInfo = () => {
-    // Implement direction info modal/tooltip
-    console.log("Show direction info");
-};
+// const showDirectionInfo = () => {
+//     // Implement direction info modal/tooltip
+//     console.log("Show direction info");
+// };
 
-const handlePublish = () => {
-    // Implement publish logic
-    console.log("Publishing recipe:", recipe.value);
+const handlePublish = async () => {
+  try {
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('name', recipe.value.name);
+    formData.append('servings', recipe.value.servings);
+    formData.append('duration', recipe.value.duration);
+    formData.append('rating', 0); // You might want to add a rating field to your form
+    formData.append('description', recipe.value.description);
+    formData.append('created_by', useAuthStore().email);
+
+    // Append the image file
+    if (previewImage.value) {
+      const response = await fetch(previewImage.value);
+      const blob = await response.blob();
+      formData.append('image', blob, 'recipe_image.jpg');
+    }
+
+    // Append ingredients
+    recipe.value.ingredients.forEach((ingredient, index) => {
+      formData.append(`ingredients[${index}][quantity]`, ingredient.quantity);
+      formData.append(`ingredients[${index}][unit]`, ingredient.unit);
+      formData.append(`ingredients[${index}][description]`, ingredient.name);
+    });
+
+    // Append directions
+    recipe.value.directions.forEach((direction, index) => {
+      formData.append(`directions[${index}][description]`, direction.text);
+    });
+
+    // Log the form data
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}: ${pair[1]}`);
+    }
+
+    // Send the request to the backend
+    const response = await axios.post('/api/recipes', formData, {
+      headers: {
+        // 'Content-Type': 'multipart/form-data',
+        // "Content-Type": "application/json",
+        Authorization: `Bearer ${useAuthStore().token}`,
+      },
+    });
+
+    console.log('Recipe published successfully:', response.data);
+    // You might want to show a success message to the user or redirect them
+  } catch (error) {
+    console.error('Error publishing recipe:', error);
+    // You might want to show an error message to the user
+  }
 };
 </script>
 
@@ -83,13 +144,11 @@ const handlePublish = () => {
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Recipe General Information -->
             <div class="space-y-6">
                 <h2 class="text-lg font-medium text-gray-700">
                     Recipe General Information
                 </h2>
 
-                <!-- Photo Upload -->
                 <div
                     class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
                 >
@@ -127,7 +186,6 @@ const handlePublish = () => {
                     </div>
                 </div>
 
-                <!-- Recipe Name -->
                 <div class="space-y-2">
                     <Label for="recipe-name">Recipe name</Label>
                     <Input
@@ -137,7 +195,15 @@ const handlePublish = () => {
                     />
                 </div>
 
-                <!-- Number of Servings -->
+                <div class="space-y-2">
+                    <Label for="recipe-name">Recipe description</Label>
+                    <Input
+                        id="recipe-description"
+                        v-model="recipe.description"
+                        placeholder="eg: a delicious and healthy meal, perfect for lunch or dinner"
+                    />
+                </div>
+
                 <div class="space-y-2">
                     <Label for="servings">Number of serving</Label>
                     <div class="flex items-center gap-2">
@@ -150,7 +216,6 @@ const handlePublish = () => {
                     </div>
                 </div>
 
-                <!-- Cook Duration -->
                 <div class="space-y-2">
                     <Label for="duration">Cook duration</Label>
                     <div class="flex items-center gap-2">
@@ -164,21 +229,19 @@ const handlePublish = () => {
                 </div>
             </div>
 
-            <!-- Recipe Detail -->
             <div class="space-y-6">
                 <h2 class="text-lg font-medium text-gray-700">Recipe Detail</h2>
 
-                <!-- Ingredients -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="font-medium">Ingredients</h3>
-                        <Button
+                        <!-- <Button
                             variant="ghost"
                             size="sm"
                             @click="showIngredientInfo"
                         >
                             <InfoIcon class="h-4 w-4" />
-                        </Button>
+                        </Button> -->
                     </div>
 
                     <div
@@ -197,31 +260,63 @@ const handlePublish = () => {
                                 </span>
                             </div>
 
-                            <div class="flex-1 grid grid-cols-12 gap-2">
+                            <div class="flex gap-2">
                                 <Input
                                     v-model="ingredient.quantity"
-                                    class="col-span-2"
+                                    class=""
                                     type="number"
                                 />
-                                <Select
-                                    v-model="ingredient.unit"
-                                    class="col-span-2"
-                                >
-                                    <option value="pcs">pcs</option>
-                                    <option value="cup">cup</option>
-                                    <option value="oz">oz</option>
-                                    <option value="tbsp">tbsp</option>
-                                    <option value="tsp">tsp</option>
+                                <Select v-model="ingredient.unit">
+                                    <SelectTrigger class="">
+                                        <SelectValue
+                                            placeholder="Select the unit"
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Volume</SelectLabel>
+                                            <SelectItem value="-"
+                                                >-</SelectItem
+                                            >
+                                            <SelectItem value="pcs"
+                                                >pcs</SelectItem
+                                            >
+                                            <SelectItem value="cup"
+                                                >cup</SelectItem
+                                            >
+                                            <SelectItem value="oz"
+                                                >oz</SelectItem
+                                            >
+                                            <SelectItem value="tbsp"
+                                                >tbsp</SelectItem
+                                            >
+                                            <SelectItem value="tsp"
+                                                >tsp</SelectItem
+                                            >
+                                            <SelectItem value="gr"
+                                                >gr</SelectItem
+                                            >
+                                            <SelectItem value="kg"
+                                                >kg</SelectItem
+                                            >
+                                            <SelectItem value="ml"
+                                                >ml</SelectItem
+                                            >
+                                            <SelectItem value="liter"
+                                                >liter</SelectItem
+                                            >
+                                        </SelectGroup>
+                                    </SelectContent>
                                 </Select>
                                 <Input
                                     v-model="ingredient.name"
-                                    class="col-span-7"
-                                    placeholder="eg: Large bell peppers (any color)"
+                                    class=""
+                                    placeholder="eg: Milk"
                                 />
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    class="col-span-1"
+                                    class="p-4"
                                     @click="removeIngredient(index)"
                                 >
                                     <TrashIcon class="h-4 w-4" />
@@ -249,17 +344,16 @@ const handlePublish = () => {
                     </Button>
                 </div>
 
-                <!-- Directions -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="font-medium">Directions</h3>
-                        <Button
+                        <h3 class="font-medium">Directions | Step by step</h3>
+                        <!-- <Button
                             variant="ghost"
                             size="sm"
                             @click="showDirectionInfo"
                         >
                             <InfoIcon class="h-4 w-4" />
-                        </Button>
+                        </Button> -->
                     </div>
 
                     <div

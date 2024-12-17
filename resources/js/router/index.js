@@ -3,6 +3,7 @@ import LoginView from "@/views/Auth/LoginView.vue";
 import RegisterView from "@/views/Auth/RegisterView.vue";
 import HomeView from "@/views/HomeView.vue";
 import RecipeDetails from "@/views/RecipeDetails.vue";
+import CreateView from '@/views/CreateView.vue';
 import { createRouter, createWebHistory } from "vue-router";
 import auth from "@/middleware/auth";
 
@@ -35,8 +36,12 @@ const routes = [
         path: "/recipe/:id",
         name: "recipe",
         component: RecipeDetails,
-        meta: { requiresAuth: true },
-        props: true,
+        props: true
+    },
+    {
+        path: '/create',
+        name: 'Create',
+        component: CreateView
     },
 ];
 
