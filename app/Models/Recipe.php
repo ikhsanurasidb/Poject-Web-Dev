@@ -14,9 +14,11 @@ class Recipe extends Model
     protected $fillable = [
         'image_url',
         'name',
+        'description',
         'servings',
         'duration',
         'rating',
+        'created_by',
     ];
 
     public function ingredients()

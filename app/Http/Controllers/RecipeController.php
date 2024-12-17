@@ -54,9 +54,11 @@ class RecipeController extends Controller
         $request->validate([
             'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'name' => 'required|string',
+            'description'=> 'required|string',
             'servings'=> 'required|integer',
             'duration' => 'required|integer',
             'rating' => 'nullable|integer',
+            'created_by'=> 'required|string',
             'ingredients' => 'required|array',
             'directions' => 'required|array',
             'ingredients.*.quantity' => 'required|integer',
@@ -92,9 +94,11 @@ class RecipeController extends Controller
         $recipe = Recipe::create([
             'image_url' => $imageUrl,
             'name' => $request->name,
+            'description'=> $request->description,
             'servings' => $request->servings,
             'duration' => $request->duration,
             'rating' => $request->rating,
+            'created_by' => $request->created_by,
         ]);
 
         foreach ($request->ingredients as $ingredientData) {
