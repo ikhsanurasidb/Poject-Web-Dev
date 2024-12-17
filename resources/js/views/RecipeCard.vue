@@ -36,7 +36,7 @@
           <!-- <Badge variant="secondary" class="text-xs">
             {{ recipe.category }}
           </Badge> -->
-          <Button variant="outline" size="sm" @click="viewRecipe">
+          <Button variant="outline" size="sm" @click="viewRecipe" class="p-4 font-bold text-white transition duration-300 bg-orange-500 hover:bg-orange-700 hover:text-white rounded-r-md">
             View Recipe
             <ChevronRightIcon class="ml-2 h-4 w-4" />
           </Button>
