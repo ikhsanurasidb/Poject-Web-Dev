@@ -207,7 +207,7 @@ class RecipeController extends Controller
             // Create new directions
             foreach ($request->directions as $directionData) {
                 $directionData['recipe_id'] = $recipe->id;
-                $directionData['image_url'] = $directionData['image_url'] ?? '';
+                $directionData['image_url'] = $directionData['image_url'] ?? 'https://example.com/default-direction.jpg';
                 Direction::create($directionData);
             }
         }
