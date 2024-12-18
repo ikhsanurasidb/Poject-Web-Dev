@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('duration');
             $table->integer('rating');
             $table->string('created_by');
+            $table->string('created_by_name');
             $table->timestamps();
         });
     }

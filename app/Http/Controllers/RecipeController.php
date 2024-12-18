@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App;
 use App\Models\Recipe;
+use App\Models\User;
 use App\Models\Ingredient;
 use App\Models\Direction;
 use Illuminate\Http\Request;
@@ -60,6 +62,7 @@ class RecipeController extends Controller
             'duration' => 'required|integer',
             'rating' => 'nullable|integer',
             'created_by' => 'required|string',
+            'created_by_name' => 'nullable|string',
             'ingredients' => 'required|array',
             'directions' => 'required|array',
             'ingredients.*.quantity' => 'required|integer',
@@ -88,6 +91,9 @@ class RecipeController extends Controller
             ], 500);
         }
 
+        $user = User::where('email', $request->created_by)->first();
+        $createdByName = $user ? $user->name : null;
+
         $recipe = Recipe::create([
             'image_url' => $imageUrl,
             'name' => $request->name,
@@ -96,6 +102,7 @@ class RecipeController extends Controller
             'duration' => $request->duration,
             'rating' => $request->rating,
             'created_by' => $request->created_by,
+            'created_by_name' => $createdByName,
         ]);
 
         foreach ($request->ingredients as $ingredientData) {
@@ -159,17 +166,23 @@ class RecipeController extends Controller
             'duration' => 'nullable|integer',
             'rating' => 'nullable|integer',
             'created_by' => 'nullable|string',
+            'created_by_name' => 'nullable|string',
             'ingredients' => 'nullable|array',
             'directions' => 'nullable|array',
             'ingredients.*.quantity' => 'required_with:ingredients|integer',
             'ingredients.*.description' => 'required_with:ingredients|string',
             'directions.*.description' => 'required_with:directions|string',
+            'directions.*.image' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
         ]);
 
+        Log::info('Has directions image: ' . $request->hasFile('directions.0.image'));
         $recipe = Recipe::findOrFail($id);
+        if ($recipe->created_by !== auth()->user()->email) {
+            return response()->json(['message' => 'You are not authorized to update this recipe.'], 403);
+        }
         $data = $request->except(['image', 'ingredients', 'directions']);
 
-        // Handle image upload if new image is provided
+        // Handle recipe main image upload if new image is provided
         if ($request->hasFile('image')) {
             try {
                 $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
@@ -205,10 +218,35 @@ class RecipeController extends Controller
             $recipe->directions()->delete();
 
             // Create new directions
-            foreach ($request->directions as $directionData) {
-                $directionData['recipe_id'] = $recipe->id;
-                $directionData['image_url'] = $directionData['image_url'] ?? 'https://example.com/default-direction.jpg';
-                Direction::create($directionData);
+            foreach ($request->directions as $index => $directionData) {
+                try {
+                    $directionImageUrl = null;
+
+                    // Check and upload direction image if exists
+                    if (isset($request->file('directions')[$index]['image'])) {
+                        $directionImage = $request->file('directions')[$index]['image'];
+                        $uploadedDirectionImage = Cloudinary::upload($directionImage->getRealPath(), [
+                            'folder' => 'recipe-directions',
+                        ]);
+                        $directionImageUrl = $uploadedDirectionImage->getSecurePath();
+                    }
+
+                    // Create direction with image URL (or default)
+                    Direction::create([
+                        'recipe_id' => $recipe->id,
+                        'description' => $directionData['description'],
+                        'image_url' => $directionImageUrl ?? 'https://example.com/150',
+                    ]);
+                } catch (Exception $e) {
+                    // Log the error but continue processing other directions
+                    \Log::error('Failed to upload direction image: ' . $e->getMessage());
+
+                    Direction::create([
+                        'recipe_id' => $recipe->id,
+                        'description' => $directionData['description'],
+                        'image_url' => 'https://example.com/150',
+                    ]);
+                }
             }
         }
 
@@ -223,6 +261,12 @@ class RecipeController extends Controller
     public function destroy($id)
     {
         $recipe = Recipe::findOrFail($id);
+
+        // Check if the authenticated user is the owner of the recipe
+        if ($recipe->created_by !== auth()->user()->email) {
+            return response()->json(['message' => 'You are not authorized to delete this recipe.'], 403);
+        }
+
         $recipe->delete();
 
         return response()->json(null, 204);

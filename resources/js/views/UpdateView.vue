@@ -101,6 +101,17 @@ const removeDirection = (index) => {
     recipe.value.directions.splice(index, 1);
 };
 
+const handleDirectionImageUpload = (event, index) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            recipe.value.directions[index].image = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 const handleUpdate = async () => {
     try {
         const formData = new FormData();
@@ -108,16 +119,30 @@ const handleUpdate = async () => {
         formData.append("servings", recipe.value.servings);
         formData.append("duration", recipe.value.duration);
         formData.append("description", recipe.value.description);
-        // formData.append("rating", recipe.value.rating || 0);
-        // formData.append("created_by", useAuthStore().email);
-        formData.append("_method", "PATCH"); // Add this line to simulate PATCH request
+        formData.append("_method", "PATCH");
 
+        // Debug recipe image
+        console.log("Recipe Image:", {
+            previewImage: previewImage.value,
+            type: typeof previewImage.value,
+            startsWith: previewImage.value
+                ? previewImage.value.startsWith("http")
+                : "N/A",
+        });
+
+        // Handle recipe image upload
         if (previewImage.value && !previewImage.value.startsWith("http")) {
-            const response = await fetch(previewImage.value);
-            const blob = await response.blob();
-            formData.append("image", blob, "recipe_image.jpg");
+            try {
+                const response = await fetch(previewImage.value);
+                const blob = await response.blob();
+                formData.append("image", blob, "recipe_image.jpg");
+                console.log("Recipe image blob created successfully");
+            } catch (imageError) {
+                console.error("Error processing recipe image:", imageError);
+            }
         }
 
+        // Handle ingredients
         recipe.value.ingredients.forEach((ingredient, index) => {
             formData.append(
                 `ingredients[${index}][quantity]`,
@@ -133,24 +158,65 @@ const handleUpdate = async () => {
             );
         });
 
-        recipe.value.directions.forEach((direction, index) => {
-            formData.append(
-                `directions[${index}][description]`,
-                direction.description
-            );
-        });
+        // Debug directions
+        console.log("Directions before upload:", recipe.value.directions);
 
-        // Log the form data
+        // Handle directions with image uploads
+        const processedDirections = await Promise.all(
+            recipe.value.directions.map(async (direction, index) => {
+                console.log(`Direction ${index} image:`, {
+                    image: direction.image,
+                    type: typeof direction.image,
+                    startsWith: direction.image
+                        ? direction.image.startsWith("http")
+                        : "N/A",
+                });
+
+                // Append direction description
+                formData.append(
+                    `directions[${index}][description]`,
+                    direction.description
+                );
+
+                // Handle direction image upload
+                if (direction.image && !direction.image.startsWith("http")) {
+                    try {
+                        const response = await fetch(direction.image);
+                        const blob = await response.blob();
+                        formData.append(
+                            `directions[${index}][image]`,
+                            blob,
+                            `direction_image_${index}.jpg`
+                        );
+                        console.log(
+                            `Direction ${index} image blob created successfully`
+                        );
+                        return { ...direction, imageProcessed: true };
+                    } catch (imageError) {
+                        console.error(
+                            `Error processing direction ${index} image:`,
+                            imageError
+                        );
+                        return { ...direction, imageProcessed: false };
+                    }
+                }
+                return direction;
+            })
+        );
+
+        // Debug: Log form data contents
         for (let pair of formData.entries()) {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
+        // Send update request
         const response = await axios.post(
             `/api/recipes/${recipeId}`,
             formData,
             {
                 headers: {
                     Authorization: `Bearer ${useAuthStore().token}`,
+                    "Content-Type": "multipart/form-data",
                 },
             }
         );
@@ -158,17 +224,21 @@ const handleUpdate = async () => {
         console.log("Recipe updated successfully:", response.data);
         toast({
             title: "Recipe Updated!",
-            description: response.data,
-            //   variant: 'success',
+            description: "Your recipe has been successfully updated.",
         });
         router.push("/");
     } catch (error) {
-        console.error("Error updating recipe:", error);
+        console.error("Full error updating recipe:", error);
+
+        // Detailed error handling
+        const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to update the recipe. Please try again.";
+
         toast({
             title: "Oops! Something went wrong",
-            description:
-                `${error.message}, have you input all fields?` ||
-                "Failed to publish the recipe. Please try again.",
+            description: errorMessage,
             variant: "destructive",
         });
     }
@@ -176,33 +246,33 @@ const handleUpdate = async () => {
 </script>
 
 <template>
-    <div class="container mx-auto p-6 max-w-6xl">
-        <header class="flex justify-between items-center mb-8">
+    <div class="container max-w-6xl p-6 mx-auto">
+        <header class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-semibold">Update recipe</h1>
             <Button @click="handleUpdate" variant="default">
                 Update recipe
             </Button>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             <div class="space-y-6">
                 <h2 class="text-lg font-medium text-gray-700">
                     Recipe General Information
                 </h2>
 
                 <div
-                    class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
+                    class="p-8 text-center border-2 border-gray-300 border-dashed rounded-lg"
                 >
                     <div class="space-y-2">
                         <div class="flex justify-center">
                             <ImageIcon
                                 v-if="!previewImage"
-                                class="h-12 w-12 text-gray-400"
+                                class="w-12 h-12 text-gray-400"
                             />
                             <img
                                 v-else
                                 :src="previewImage"
-                                class="max-h-48 rounded-lg"
+                                class="rounded-lg max-h-48"
                                 alt="Recipe preview"
                             />
                         </div>
@@ -289,7 +359,7 @@ const handleUpdate = async () => {
                                     class="inline-flex items-center justify-center w-6 h-6"
                                 >
                                     <DotsVerticalIcon
-                                        class="h-4 w-4 text-gray-400"
+                                        class="w-4 h-4 text-gray-400"
                                     />
                                 </span>
                             </div>
@@ -351,7 +421,7 @@ const handleUpdate = async () => {
                                     class="p-4"
                                     @click="removeIngredient(index)"
                                 >
-                                    <TrashIcon class="h-4 w-4" />
+                                    <TrashIcon class="w-4 h-4" />
                                 </Button>
                             </div>
                         </div>
@@ -362,11 +432,12 @@ const handleUpdate = async () => {
                         class="w-full"
                         @click="addIngredient"
                     >
-                        <PlusIcon class="h-4 w-4 mr-2" />
+                        <PlusIcon class="w-4 h-4 mr-2" />
                         Add ingredients
                     </Button>
                 </div>
 
+                <!-- Inside the directions section -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="font-medium">Directions | Step by step</h3>
@@ -380,13 +451,13 @@ const handleUpdate = async () => {
                         <div class="flex items-start gap-2">
                             <div class="flex-none">
                                 <span
-                                    class="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full text-sm"
+                                    class="inline-flex items-center justify-center w-6 h-6 text-sm bg-gray-100 rounded-full"
                                 >
                                     {{ String(index + 1).padStart(2, "0") }}
                                 </span>
                             </div>
 
-                            <div class="flex-1 flex gap-2">
+                            <div class="flex flex-col flex-1 gap-2">
                                 <Textarea
                                     v-model="direction.description"
                                     :placeholder="`eg: Step ${
@@ -395,13 +466,47 @@ const handleUpdate = async () => {
                                     rows="3"
                                     class="flex-1"
                                 />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    @click="removeDirection(index)"
-                                >
-                                    <TrashIcon class="h-4 w-4" />
-                                </Button>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        :ref="`directionFileInput${index}`"
+                                        class="hidden"
+                                        accept="image/png,image/jpeg"
+                                        @change="
+                                            (event) =>
+                                                handleDirectionImageUpload(
+                                                    event,
+                                                    index
+                                                )
+                                        "
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        @click="
+                                            $refs[
+                                                `directionFileInput${index}`
+                                            ][0].click()
+                                        "
+                                    >
+                                        {{
+                                            direction.image
+                                                ? "Change Image"
+                                                : "Add Image"
+                                        }}
+                                    </Button>
+                                    <img
+                                        v-if="direction.image"
+                                        :src="direction.image"
+                                        class="object-cover w-12 h-12 rounded"
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        @click="removeDirection(index)"
+                                    >
+                                        <TrashIcon class="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -411,7 +516,7 @@ const handleUpdate = async () => {
                         class="w-full"
                         @click="addDirection"
                     >
-                        <PlusIcon class="h-4 w-4 mr-2" />
+                        <PlusIcon class="w-4 h-4 mr-2" />
                         Add directions
                     </Button>
                 </div>

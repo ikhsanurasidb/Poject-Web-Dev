@@ -19,6 +19,7 @@ class Recipe extends Model
         'duration',
         'rating',
         'created_by',
+        'created_by_name',
     ];
 
     public function ingredients()

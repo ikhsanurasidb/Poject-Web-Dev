@@ -7,33 +7,38 @@
                 :alt="recipe.name"
             />
             <div class="absolute top-2 right-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            class="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm"
-                            @click.stop
-                        >
-                            <MoreVerticalIcon class="w-4 h-4" />
-                            <span class="sr-only">Open menu</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem @click.stop="editRecipe">
-                            <PencilIcon class="w-4 h-4 mr-2" />
-                            <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem @click.stop="openDeleteDialog">
-                            <TrashIcon class="w-4 h-4 mr-2" />
-                            <span>Delete</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div class="absolute top-2 right-2" v-if="isOwner">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                class="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm"
+                                @click.stop
+                            >
+                                <MoreVerticalIcon class="w-4 h-4" />
+                                <span class="sr-only">Open menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem @click.stop="editRecipe">
+                                <PencilIcon class="w-4 h-4 mr-2" />
+                                <span>Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem @click.stop="openDeleteDialog">
+                                <TrashIcon class="w-4 h-4 mr-2" />
+                                <span>Delete</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
         </CardHeader>
         <CardContent class="flex flex-col justify-between flex-grow p-4">
             <div>
+                <Badge class="mb-2" variant="primary" size="sm"
+                    >by: {{ recipe.created_by_name }}</Badge
+                >
                 <CardTitle class="mb-2 text-xl">{{ recipe.name }}</CardTitle>
                 <p class="w-full truncate">{{ recipe.description }}</p>
             </div>
@@ -73,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -100,6 +105,7 @@ import {
     TrashIcon,
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
+import Badge from "@/components/ui/badge/Badge.vue";
 
 const props = defineProps({
     recipe: {
@@ -133,14 +139,11 @@ const closeDeleteDialog = () => {
 
 const deleteRecipe = async () => {
     try {
-        await axios.delete(
-            `${APP_URL}/api/recipes/${props.recipe.id}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${authStore.token}`,
-                },
-            }
-        );
+        await axios.delete(`${APP_URL}/api/recipes/${props.recipe.id}`, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`,
+            },
+        });
         closeDeleteDialog();
         emit("delete", props.recipe.id);
         toast({
@@ -154,9 +157,14 @@ const deleteRecipe = async () => {
         console.error("Error deleting recipe:", error);
         toast({
             title: "Error",
-            description: "Failed to delete the recipe. Please try again.",
+            description:
+                error.response.data.message || "Failed to delete recipe.",
             variant: "destructive",
         });
     }
 };
+
+const isOwner = computed(() => {
+    return authStore.email === props.recipe.created_by;
+});
 </script>
