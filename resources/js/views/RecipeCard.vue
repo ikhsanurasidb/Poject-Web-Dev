@@ -113,6 +113,7 @@ const emit = defineEmits(["delete"]);
 const router = useRouter();
 const { toast } = useToast();
 const isDeleteDialogOpen = ref(false);
+const APP_URL = import.meta.env.VITE_APP_URL;
 
 const viewRecipe = () => {
     router.push({ name: "recipe", params: { id: props.recipe.id } });
@@ -133,7 +134,7 @@ const closeDeleteDialog = () => {
 const deleteRecipe = async () => {
     try {
         await axios.delete(
-            `http://localhost:8000/api/recipes/${props.recipe.id}`,
+            `${APP_URL}/api/recipes/${props.recipe.id}`,
             {
                 headers: {
                     Authorization: `Bearer ${authStore.token}`,
