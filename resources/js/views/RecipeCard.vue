@@ -148,7 +148,8 @@ const deleteRecipe = async () => {
             description: `"${props.recipe.name}" has been deleted successfully.`,
             variant: "default",
         });
-        // router.push("/");
+        await router.push("/");
+        router.go();
     } catch (error) {
         console.error("Error deleting recipe:", error);
         toast({
