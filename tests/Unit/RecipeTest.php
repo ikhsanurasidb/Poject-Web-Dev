@@ -20,6 +20,7 @@ class RecipeTest extends TestCase
             'duration' => 30,
             'rating' => 5,
             'created_by' => 1,
+            'created_by_name' => 'Theofilus',
         ];
 
         $recipe = Recipe::create($recipeData);
@@ -41,6 +42,7 @@ class RecipeTest extends TestCase
             'duration' => 30,
             'rating' => 5,
             'created_by' => 1,
+            'created_by_name' => 'Theofilus',
         ]);
 
         $recipe->ingredients()->createMany([
