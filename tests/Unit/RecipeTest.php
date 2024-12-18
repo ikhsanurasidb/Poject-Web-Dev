@@ -9,14 +9,15 @@ use App\Models\Direction;
 
 class RecipeTest extends TestCase
 {
+
     public function test_can_create_recipe()
     {
         $recipeData = [
-            'image_url',
+            'image_url' => 'https://example.com/150',
             'name' => 'Gado-Gado Special',
             'description' => 'Delicious Indonesian salad with peanut sauce.',
             'servings' => 4,
-            'duration' => '30 minutes',
+            'duration' => 30,
             'rating' => 5,
             'created_by' => 1,
         ];
@@ -24,6 +25,7 @@ class RecipeTest extends TestCase
         $recipe = Recipe::create($recipeData);
 
         $this->assertDatabaseHas('recipes', [
+            'image_url' => 'https://example.com/150',
             'name' => 'Gado-Gado Special',
             'description' => 'Delicious Indonesian salad with peanut sauce.',
         ]);
@@ -32,24 +34,30 @@ class RecipeTest extends TestCase
     public function test_can_create_recipe_with_ingredients_and_directions()
     {
         $recipe = Recipe::factory()->create([
+            'image_url' => 'https://example.com/150',
             'name' => 'Gado-Gado Special',
+            'description' => 'Delicious Indonesian salad with peanut sauce.',
+            'servings' => 4,
+            'duration' => 30,
+            'rating' => 5,
+            'created_by' => 1,
         ]);
 
         $recipe->ingredients()->createMany([
-            ['name' => 'Kacang Panjang', 'quantity' => '50g'],
-            ['name' => 'Tahu', 'quantity' => '100g'],
-            ['name' => 'Saus Kacang', 'quantity' => '100ml'],
+            ['description' => 'Kacang Panjang', 'quantity' => '50', 'unit' => 'g'],
+            ['description' => 'Tahu', 'quantity' => '100', 'unit'=> 'g'],
+            ['description' => 'Saus Kacang', 'quantity' => '100', 'unit' => 'ml'],
         ]);
 
         $recipe->directions()->createMany([
-            ['step_number' => 1, 'instruction' => 'Kukus semua sayur.'],
-            ['step_number' => 2, 'instruction' => 'Tuangkan saus kacang.'],
+            ['image_url' => 'https://example.com/201', 'description' => 'Kukus semua sayur.'],
+            ['image_url' => 'https://example.com/202', 'description' => 'Tuangkan saus kacang.'],
         ]);
 
         $this->assertEquals(3, $recipe->ingredients()->count());
         $this->assertEquals(2, $recipe->directions()->count());
 
-        $this->assertDatabaseHas('ingredients', ['name' => 'Kacang Panjang']);
-        $this->assertDatabaseHas('directions', ['instruction' => 'Kukus semua sayur.']);
+        $this->assertDatabaseHas('ingredients', ['description' => 'Kacang Panjang']);
+        $this->assertDatabaseHas('directions', ['description' => 'Kukus semua sayur.']);
     }
 }
