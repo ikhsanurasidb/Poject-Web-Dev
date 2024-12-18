@@ -9,8 +9,6 @@ use App\Models\Direction;
 
 class RecipeTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_can_create_recipe()
     {
         $recipeData = [
