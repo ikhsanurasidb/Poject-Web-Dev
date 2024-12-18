@@ -8,6 +8,7 @@ use App\Models\Direction;
 use Illuminate\Http\Request;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Exception;
+use Log;
 
 
 class RecipeController extends Controller
@@ -64,16 +65,17 @@ class RecipeController extends Controller
             'ingredients.*.quantity' => 'required|integer',
             'ingredients.*.description' => 'required|string',
             'directions.*.description' => 'required|string',
+            'directions.*.image' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg|max:2048',
         ]);
 
-        # Upload image to Cloudinary
+        Log::info('Has directions image: ' . $request->hasFile('directions.0.image'));
+
+        # Upload recipe main image to Cloudinary
         try {
             if ($request->hasFile('image')) {
                 $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
                     'folder' => 'recipes',
                 ]);
-
-                // Get the uploaded image URL
                 $imageUrl = $uploadedImage->getSecurePath();
             } else {
                 return response()->json([
@@ -81,15 +83,10 @@ class RecipeController extends Controller
                 ], 400);
             }
         } catch (Exception $e) {
-            // Return a JSON response with a 500 status code
             return response()->json([
-                'message' => 'Failed to upload image. Please try again later.',
+                'message' => 'Failed to upload recipe image. Please try again later.',
             ], 500);
         }
-
-
-        // Get the uploaded image URL
-        $imageUrl = $uploadedImage->getSecurePath();
 
         $recipe = Recipe::create([
             'image_url' => $imageUrl,
@@ -107,10 +104,33 @@ class RecipeController extends Controller
             Ingredient::create($ingredientData);
         }
 
-        foreach ($request->directions as $directionData) {
-            $directionData['recipe_id'] = $recipe->id;
-            $directionData['image_url'] = $directionData['image_url'] ?? 'https://example.com/150';
-            Direction::create($directionData);
+        foreach ($request->directions as $index => $directionData) {
+            try {
+                $directionImageUrl = null;
+
+                if (isset($request->file('directions')[$index]['image'])) {
+                    $directionImage = $request->file('directions')[$index]['image'];
+                    $uploadedDirectionImage = Cloudinary::upload($directionImage->getRealPath(), [
+                        'folder' => 'recipe-directions',
+                    ]);
+                    $directionImageUrl = $uploadedDirectionImage->getSecurePath();
+                }
+
+                Direction::create([
+                    'recipe_id' => $recipe->id,
+                    'description' => $directionData['description'],
+                    'image_url' => $directionImageUrl ?? 'https://example.com/150',
+                ]);
+            } catch (Exception $e) {
+                // Log the error but continue processing other directions
+                \Log::error('Failed to upload direction image: ' . $e->getMessage());
+
+                Direction::create([
+                    'recipe_id' => $recipe->id,
+                    'description' => $directionData['description'],
+                    'image_url' => 'https://example.com/150',
+                ]);
+            }
         }
 
         return response()->json($recipe->load(['ingredients', 'directions']), 201);

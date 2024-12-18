@@ -4,8 +4,6 @@ import Input from "@/components/ui/input/Input.vue";
 import Label from "@/components/ui/label/Label.vue";
 import axios from "axios";
 import { ref } from "vue";
-// import Label from "@/components/ui/label/Label.vue";
-// import Select from "@/components/ui/select/Select.vue";
 import {
     Select,
     SelectContent,
@@ -18,12 +16,7 @@ import {
 import Switch from "@/components/ui/switch/Switch.vue";
 import Textarea from "@/components/ui/textarea/Textarea.vue";
 import { useToast } from "@/components/ui/toast";
-import {
-    ImageIcon,
-    // InfoIcon,
-    PlusIcon,
-    TrashIcon,
-} from "lucide-vue-next";
+import { ImageIcon, PlusIcon, TrashIcon } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
@@ -67,6 +60,7 @@ const removeIngredient = (index) => {
 const addDirection = () => {
     recipe.value.directions.push({
         text: "",
+        image: null,
     });
 };
 
@@ -74,35 +68,33 @@ const removeDirection = (index) => {
     recipe.value.directions.splice(index, 1);
 };
 
-// const showIngredientInfo = () => {
-//     // Implement ingredient info modal/tooltip
-//     console.log("Show ingredient info");
-// };
-
-// const showDirectionInfo = () => {
-//     // Implement direction info modal/tooltip
-//     console.log("Show direction info");
-// };
+const handleDirectionImageUpload = (event, index) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            recipe.value.directions[index].image = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+};
 
 const handlePublish = async () => {
     try {
-        // Prepare the form data
         const formData = new FormData();
         formData.append("name", recipe.value.name);
         formData.append("servings", recipe.value.servings);
         formData.append("duration", recipe.value.duration);
-        formData.append("rating", 0); // You might want to add a rating field to your form
+        formData.append("rating", 0);
         formData.append("description", recipe.value.description);
         formData.append("created_by", useAuthStore().email);
 
-        // Append the image file
         if (previewImage.value) {
             const response = await fetch(previewImage.value);
             const blob = await response.blob();
             formData.append("image", blob, "recipe_image.jpg");
         }
 
-        // Append ingredients
         recipe.value.ingredients.forEach((ingredient, index) => {
             formData.append(
                 `ingredients[${index}][quantity]`,
@@ -115,25 +107,34 @@ const handlePublish = async () => {
             );
         });
 
-        // Append directions
-        recipe.value.directions.forEach((direction, index) => {
-            formData.append(
-                `directions[${index}][description]`,
-                direction.text
-            );
-        });
+        // Tunggu semua proses upload gambar directions selesai
+        await Promise.all(
+            recipe.value.directions.map(async (direction, index) => {
+                formData.append(
+                    `directions[${index}][description]`,
+                    direction.text
+                );
+                if (direction.image) {
+                    const response = await fetch(direction.image);
+                    const blob = await response.blob();
+                    formData.append(
+                        `directions[${index}][image]`,
+                        blob,
+                        `direction_image_${index}.jpg`
+                    );
+                }
+            })
+        );
 
-        // Log the form data
+        // Debug untuk melihat isi formData
         for (let pair of formData.entries()) {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
-        // Send the request to the backend
         const response = await axios.post("/api/recipes", formData, {
             headers: {
-                // 'Content-Type': 'multipart/form-data',
-                // "Content-Type": "application/json",
                 Authorization: `Bearer ${useAuthStore().token}`,
+                "Content-Type": "multipart/form-data",
             },
         });
 
@@ -141,10 +142,8 @@ const handlePublish = async () => {
         toast({
             title: "Recipe published!",
             description: response.data,
-            //   variant: 'success',
         });
         router.push("/");
-        // You might want to show a success message to the user or redirect them
     } catch (error) {
         console.error("Error publishing recipe:", error);
         toast({
@@ -154,39 +153,38 @@ const handlePublish = async () => {
                 "Failed to publish the recipe. Please try again.",
             variant: "destructive",
         });
-        // You might want to show an error message to the user
     }
 };
 </script>
 
 <template>
-    <div class="container mx-auto p-6 max-w-6xl">
-        <header class="flex justify-between items-center mb-8">
+    <div class="container max-w-6xl p-6 mx-auto">
+        <header class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-semibold">Create new recipe</h1>
             <Button @click="handlePublish" variant="default">
                 Publish recipe
             </Button>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             <div class="space-y-6">
                 <h2 class="text-lg font-medium text-gray-700">
                     Recipe General Information
                 </h2>
 
                 <div
-                    class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
+                    class="p-8 text-center border-2 border-gray-300 border-dashed rounded-lg"
                 >
                     <div class="space-y-2">
                         <div class="flex justify-center">
                             <ImageIcon
                                 v-if="!previewImage"
-                                class="h-12 w-12 text-gray-400"
+                                class="w-12 h-12 text-gray-400"
                             />
                             <img
                                 v-else
                                 :src="previewImage"
-                                class="max-h-48 rounded-lg"
+                                class="rounded-lg max-h-48"
                                 alt="Recipe preview"
                             />
                         </div>
@@ -260,13 +258,6 @@ const handlePublish = async () => {
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="font-medium">Ingredients</h3>
-                        <!-- <Button
-                            variant="ghost"
-                            size="sm"
-                            @click="showIngredientInfo"
-                        >
-                            <InfoIcon class="h-4 w-4" />
-                        </Button> -->
                     </div>
 
                     <div
@@ -280,7 +271,7 @@ const handlePublish = async () => {
                                     class="inline-flex items-center justify-center w-6 h-6"
                                 >
                                     <DotsVerticalIcon
-                                        class="h-4 w-4 text-gray-400"
+                                        class="w-4 h-4 text-gray-400"
                                     />
                                 </span>
                             </div>
@@ -288,11 +279,10 @@ const handlePublish = async () => {
                             <div class="flex gap-2">
                                 <Input
                                     v-model="ingredient.quantity"
-                                    class=""
                                     type="number"
                                 />
                                 <Select v-model="ingredient.unit">
-                                    <SelectTrigger class="">
+                                    <SelectTrigger>
                                         <SelectValue
                                             placeholder="Select the unit"
                                         />
@@ -333,7 +323,6 @@ const handlePublish = async () => {
                                 </Select>
                                 <Input
                                     v-model="ingredient.name"
-                                    class=""
                                     placeholder="eg: Milk"
                                 />
                                 <Button
@@ -342,7 +331,7 @@ const handlePublish = async () => {
                                     class="p-4"
                                     @click="removeIngredient(index)"
                                 >
-                                    <TrashIcon class="h-4 w-4" />
+                                    <TrashIcon class="w-4 h-4" />
                                 </Button>
                             </div>
                         </div>
@@ -362,7 +351,7 @@ const handlePublish = async () => {
                         class="w-full"
                         @click="addIngredient"
                     >
-                        <PlusIcon class="h-4 w-4 mr-2" />
+                        <PlusIcon class="w-4 h-4 mr-2" />
                         Add ingredients
                     </Button>
                 </div>
@@ -370,13 +359,6 @@ const handlePublish = async () => {
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="font-medium">Directions | Step by step</h3>
-                        <!-- <Button
-                            variant="ghost"
-                            size="sm"
-                            @click="showDirectionInfo"
-                        >
-                            <InfoIcon class="h-4 w-4" />
-                        </Button> -->
                     </div>
 
                     <div
@@ -387,13 +369,13 @@ const handlePublish = async () => {
                         <div class="flex items-start gap-2">
                             <div class="flex-none">
                                 <span
-                                    class="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full text-sm"
+                                    class="inline-flex items-center justify-center w-6 h-6 text-sm bg-gray-100 rounded-full"
                                 >
                                     {{ String(index + 1).padStart(2, "0") }}
                                 </span>
                             </div>
 
-                            <div class="flex-1 flex gap-2">
+                            <div class="flex flex-col flex-1 gap-2">
                                 <Textarea
                                     v-model="direction.text"
                                     :placeholder="`eg: Step ${
@@ -402,13 +384,47 @@ const handlePublish = async () => {
                                     rows="3"
                                     class="flex-1"
                                 />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    @click="removeDirection(index)"
-                                >
-                                    <TrashIcon class="h-4 w-4" />
-                                </Button>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        :ref="`directionFileInput${index}`"
+                                        class="hidden"
+                                        accept="image/png,image/jpeg"
+                                        @change="
+                                            (event) =>
+                                                handleDirectionImageUpload(
+                                                    event,
+                                                    index
+                                                )
+                                        "
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        @click="
+                                            $refs[
+                                                `directionFileInput${index}`
+                                            ][0].click()
+                                        "
+                                    >
+                                        {{
+                                            direction.image
+                                                ? "Change Image"
+                                                : "Add Image"
+                                        }}
+                                    </Button>
+                                    <img
+                                        v-if="direction.image"
+                                        :src="direction.image"
+                                        class="object-cover w-12 h-12 rounded"
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        @click="removeDirection(index)"
+                                    >
+                                        <TrashIcon class="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -418,7 +434,7 @@ const handlePublish = async () => {
                         class="w-full"
                         @click="addDirection"
                     >
-                        <PlusIcon class="h-4 w-4 mr-2" />
+                        <PlusIcon class="w-4 h-4 mr-2" />
                         Add directions
                     </Button>
                 </div>
